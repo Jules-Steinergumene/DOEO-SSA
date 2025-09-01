@@ -14,32 +14,28 @@ use ApiPlatform\Metadata\GetCollection;
 
 #[ORM\Entity(repositoryClass: CountryRepository::class)]
 #[ApiResource(normalizationContext: ["enable_max_depth" => true])]
-#[Get(normalizationContext: ['groups' => ['country:get']])]
-#[GetCollection(normalizationContext: ['groups' => ['country:getCollection']])]
+#[Get(normalizationContext: ['groups' => [Country::COUNTRY_DETAILS_SERIALIZE_GROUP, Agent::AGENT_PREVIEW_SERIALIZE_GROUP, Mission::MISSION_PREVIEW_SERIALIZE_GROUP]])]
+#[GetCollection(normalizationContext: ['groups' => [Country::COUNTRY_PREVIEW_SERIALIZE_GROUP, Agent::AGENT_PREVIEW_SERIALIZE_GROUP]])]
 class Country
 {
+
+    const COUNTRY_PREVIEW_SERIALIZE_GROUP = 'country:preview';
+    const COUNTRY_DETAILS_SERIALIZE_GROUP = 'country:details';
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     #[Groups([
-        'country:get',
-        'country:getCollection',
-        'mission:get',
-        'mission:getCollection',
-        'agent:get',
-        'agent:getCollection'
+        Country::COUNTRY_DETAILS_SERIALIZE_GROUP,
+        Country::COUNTRY_PREVIEW_SERIALIZE_GROUP,
     ])]
     private ?int $id = null;
 
 
     #[ORM\Column(length: 255)]
     #[Groups([
-        'country:get',
-        'country:getCollection',
-        'mission:get',
-        'mission:getCollection',
-        'agent:get',
-        'agent:getCollection'
+        Country::COUNTRY_DETAILS_SERIALIZE_GROUP,
+        Country::COUNTRY_PREVIEW_SERIALIZE_GROUP,
     ])]
     private ?string $name = null;
 
@@ -47,7 +43,7 @@ class Country
      * @var Collection<int, Mission>
      */
     #[ORM\OneToMany(targetEntity: Mission::class, mappedBy: 'Country')]
-    #[Groups(['country:get'])]
+    #[Groups([Country::COUNTRY_DETAILS_SERIALIZE_GROUP,])]
     #[MaxDepth(1)]
     private Collection $missions;
 
@@ -55,16 +51,14 @@ class Country
      * @var Collection<int, Agent>
      */
     #[ORM\OneToMany(targetEntity: Agent::class, mappedBy: 'infiltratedCountry')]
-    #[Groups(['country:get'])]
+    #[Groups([Country::COUNTRY_DETAILS_SERIALIZE_GROUP,])]
     #[MaxDepth(1)]
     private Collection $infiltratedAgents;
 
     #[ORM\OneToOne]
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
     #[Groups([
-        'country:get',
-        'country:getCollection',
-        'mission:get',
+        Country::COUNTRY_DETAILS_SERIALIZE_GROUP,
     ])]
     #[MaxDepth(1)]
     private ?Agent $cellLeader = null;
@@ -97,9 +91,8 @@ class Country
     }
 
     #[Groups([
-        'country:get',
-        'country:getCollection',
-        'mission:get',
+        Country::COUNTRY_DETAILS_SERIALIZE_GROUP,
+        Country::COUNTRY_PREVIEW_SERIALIZE_GROUP,
     ])]
     public function getDanger(): ?DangerLevelEnum
     {
@@ -150,7 +143,7 @@ class Country
         });
     }
 
-    #[Groups(['country:getCollection'])]
+    #[Groups([Country::COUNTRY_PREVIEW_SERIALIZE_GROUP,])]
     public function getCurrentsMissionCount(): int
     {
         return count($this->getCurrentsMission());
@@ -186,7 +179,7 @@ class Country
         return $this->infiltratedAgents;
     }
 
-    #[Groups(['country:getCollection'])]
+    #[Groups([Country::COUNTRY_PREVIEW_SERIALIZE_GROUP,])]
     public function getInfiltratedAgentsCount(): int
     {
         return count($this->getInfiltratedAgents());

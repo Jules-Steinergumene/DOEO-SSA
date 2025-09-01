@@ -16,92 +16,84 @@ use ApiPlatform\Metadata\Post;
 
 #[ORM\Entity(repositoryClass: MissionRepository::class)]
 #[ApiResource(normalizationContext: ["enable_max_depth" => true])]
-#[Get(normalizationContext: ['groups' => ['mission:get']])]
-#[GetCollection(normalizationContext: ['groups' => ['mission:getCollection']])]
-#[Post(denormalizationContext: ['groups'=> ['mission:post']])]
+#[Get(normalizationContext: ['groups' => [
+
+]])]
+#[GetCollection(normalizationContext: [
+    'mission:preview',
+
+])]
+#[Post(denormalizationContext: ['groups' => [Mission::MISSION_POST_SERIALIZE_GROUP]])]
 class Mission
 {
+
+    const MISSION_PREVIEW_SERIALIZE_GROUP = 'mission:preview';
+    const MISSION_DETAILS_SERIALIZE_GROUP = 'mission:details';
+    const MISSION_POST_SERIALIZE_GROUP = 'mission:details';
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     #[Groups([
-        'mission:get',
-        'mission:getCollection',
-        'country:get',
-        'agent:get',
+        Mission::MISSION_DETAILS_SERIALIZE_GROUP,
+        Mission::MISSION_PREVIEW_SERIALIZE_GROUP,
     ])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
     #[Groups([
-        'mission:get',
-        'mission:getCollection',
-        'country:get',
-        'agent:get',
-        'mission:post',
+        Mission::MISSION_DETAILS_SERIALIZE_GROUP,
+        Mission::MISSION_PREVIEW_SERIALIZE_GROUP,
     ])]
     private ?string $name = null;
 
     #[ORM\Column(type: 'string', enumType: DangerLevelEnum::class)]
     #[Groups([
-        'mission:get',
-        'mission:getCollection',
-        'country:get',
-        'agent:get',
-        'mission:post',
+        Mission::MISSION_DETAILS_SERIALIZE_GROUP,
+        Mission::MISSION_PREVIEW_SERIALIZE_GROUP,
+        Mission::MISSION_POST_SERIALIZE_GROUP,
     ])]
     private ?DangerLevelEnum $danger = null;
 
     #[ORM\Column(enumType: MissionStatusEnum::class, nullable: true)]
     #[Groups([
-        'mission:get',
-        'mission:getCollection',
-        'country:get',
-        'agent:get',
+        Mission::MISSION_DETAILS_SERIALIZE_GROUP,
     ])]
     private ?MissionStatusEnum $status = null;
 
     #[Groups([
-        'mission:get',
-        'mission:getCollection',
-        'country:get',
-        'mission:post',
+        Mission::MISSION_DETAILS_SERIALIZE_GROUP,
+        Mission::MISSION_PREVIEW_SERIALIZE_GROUP,
+        Mission::MISSION_POST_SERIALIZE_GROUP,
     ])]
     #[ORM\Column(type: Types::TEXT)]
     private ?string $description = null;
 
     #[ORM\Column(type: Types::TEXT)]
     #[Groups([
-        'mission:get',
-        'mission:post',
+        Mission::MISSION_DETAILS_SERIALIZE_GROUP,
+        Mission::MISSION_POST_SERIALIZE_GROUP,
     ])]
     private ?string $objectives = null;
 
     #[Groups([
-        'mission:get',
-        'mission:getCollection',
-        'country:get',
-        'agent:get',
-        'mission:post',
+        Mission::MISSION_DETAILS_SERIALIZE_GROUP,
+        Mission::MISSION_POST_SERIALIZE_GROUP,
     ])]
     private ?\DateTimeImmutable $startDate = null;
 
     #[ORM\Column(nullable: true)]
     #[Groups([
-        'mission:get',
-        'mission:getCollection',
-        'country:get',
-        'agent:get',
+        Mission::MISSION_DETAILS_SERIALIZE_GROUP,
     ])]
     private ?\DateTimeImmutable $endDate = null;
 
     #[ORM\ManyToOne(inversedBy: 'missions')]
     #[ORM\JoinColumn(onDelete: 'SET NULL')]
     #[Groups([
-        'mission:get',
-        'mission:getCollection',
-        'agent:get',
-        'mission:post',
+        Mission::MISSION_DETAILS_SERIALIZE_GROUP,
+        Mission::MISSION_PREVIEW_SERIALIZE_GROUP,
+        Mission::MISSION_POST_SERIALIZE_GROUP,
     ])]
     #[MaxDepth(1)]
     private ?Country $Country = null;
@@ -111,8 +103,8 @@ class Mission
      */
     #[ORM\ManyToMany(targetEntity: Agent::class, mappedBy: 'missions')]
     #[Groups([
-        'mission:get',
-        'mission:post',
+        Mission::MISSION_DETAILS_SERIALIZE_GROUP,
+        Mission::MISSION_POST_SERIALIZE_GROUP,
     ])]
     #[MaxDepth(1)]
     private Collection $agents;
@@ -239,7 +231,7 @@ class Mission
     }
 
     #[Groups([
-        'mission:getCollection',
+        Mission::MISSION_PREVIEW_SERIALIZE_GROUP,
     ])]
     public function getAgentsCount(): int
     {
@@ -249,7 +241,7 @@ class Mission
     public function addAgent(Agent $agent): static
     {
         if ($this->isCurrent() && $agent->getInfiltratedCountry()->getId() !== $this->getCountry()->getId()) {
-            throw new \InvalidArgumentException (
+            throw new \InvalidArgumentException(
                 "L\'agent $agent est infiltré dans " . $agent->getInfiltratedCountry() . ". Pour être assigné à la mission " . $this->getName() . " il doit être infiltré dans " . $this->getCountry() . '.'
             );
         }

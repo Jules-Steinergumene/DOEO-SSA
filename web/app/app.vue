@@ -1,11 +1,14 @@
 <template>
-  <q-card class="q-pa-md">
-    <q-card-section>
-      <h2>Hello World </h2>
-    </q-card-section>
-  </q-card>
+  <div id="app">
+    <NuxtPage />
+  </div>
 </template>
 
-<script setup>
-// Test du hot reload
+<script setup lang="ts">
 </script>
+
+<style>
+#app {
+  min-height: 100vh;
+}
+</style>

@@ -16,37 +16,38 @@ use Symfony\Component\Serializer\Annotation\MaxDepth;
 
 #[ORM\Entity(repositoryClass: AgentRepository::class)]
 #[ApiResource(normalizationContext: ["enable_max_depth" => true])]
-#[GetCollection(normalizationContext: ['groups' => 'agent:getCollection'])] //Permet de ne pas retourner le nom et prénom de l'agent
-#[Get(normalizationContext: ['groups' => 'agent:get'])]
+#[GetCollection(normalizationContext: ['groups' => [
+    Agent::AGENT_PREVIEW_SERIALIZE_GROUP,
+    Mission::MISSION_PREVIEW_SERIALIZE_GROUP,
+    Country::COUNTRY_PREVIEW_SERIALIZE_GROUP]])]
+#[Get(normalizationContext: ['groups' => [Agent::AGENT_DETAILS_SERIALIZE_GROUP, Mission::MISSION_PREVIEW_SERIALIZE_GROUP,Country::COUNTRY_PREVIEW_SERIALIZE_GROUP]])]
 class Agent
 {
+
+    const AGENT_PREVIEW_SERIALIZE_GROUP = 'agent:preview';
+    const AGENT_DETAILS_SERIALIZE_GROUP = 'agent:details';
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     #[Groups([
-        'agent:get',
-        'agent:getCollection',
-        'country:get',
-        'country:getCollection',
+        Agent::AGENT_DETAILS_SERIALIZE_GROUP,
+        Agent::AGENT_PREVIEW_SERIALIZE_GROUP,
     ])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
     #[Groups([
-        'agent:get',
-        'agent:getCollection',
-        'country:get',
-        'country:getCollection',
-        'mission:get',
-        'mission:getCollection'
-    ]
-    )]
+        Agent::AGENT_DETAILS_SERIALIZE_GROUP,
+        Agent::AGENT_PREVIEW_SERIALIZE_GROUP,
+    ])]
     private ?string $codeName = null;
 
     #[ORM\Column]
     #[Groups([
-        'agent:get',
+        Agent::AGENT_DETAILS_SERIALIZE_GROUP,
     ])]
+
     private ?DateTimeImmutable $enrolementDate = null;
 
     function __tostring(): string
@@ -56,14 +57,13 @@ class Agent
 
     #[ORM\Column(enumType: AgentStatusEnum::class)]
     #[Groups([
-        'agent:get',
-        'agent:getCollection',
+        Agent::AGENT_DETAILS_SERIALIZE_GROUP,
+        Agent::AGENT_PREVIEW_SERIALIZE_GROUP,
     ])]
     private ?AgentStatusEnum $status = null;
 
     #[Groups([
-        'agent:get',
-        'agent:getCollection',
+        Agent::AGENT_DETAILS_SERIALIZE_GROUP,
     ])]
     #[ORM\ManyToOne(targetEntity: Country::class, inversedBy: 'infiltratedAgents')]
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
@@ -74,7 +74,7 @@ class Agent
      * @var Collection<int, Mission>
      */
     #[Groups([
-        'agent:get',
+        Agent::AGENT_DETAILS_SERIALIZE_GROUP,
     ])]
     #[ORM\ManyToMany(targetEntity: Mission::class, inversedBy: 'agents')]
     #[MaxDepth(1)]
@@ -103,9 +103,8 @@ class Agent
     }
 
     #[Groups([
-        'agent:get',
-        'agent:getCollection',
-        'mission:get'
+        Agent::AGENT_DETAILS_SERIALIZE_GROUP,
+        Agent::AGENT_PREVIEW_SERIALIZE_GROUP,
     ])]
     public function getYearsOfExperience(): ?int
     {
@@ -162,7 +161,9 @@ class Agent
     }
 
 
-    #[Groups(['agent:get'])]
+    #[Groups([
+        Agent::AGENT_DETAILS_SERIALIZE_GROUP,
+    ])]
     public function getCurrentMission(): ?Mission
     {
         return array_find($this->getMissions()->toArray(), function (Mission $mission) {
@@ -172,14 +173,14 @@ class Agent
 
     public function addMission(Mission $mission): static
     {
-        if($mission->isCurrent() && $this->getStatus() !== AgentStatusEnum::AVAILABLE){
-            throw new \InvalidArgumentException (
+        if ($mission->isCurrent() && $this->getStatus() !== AgentStatusEnum::AVAILABLE) {
+            throw new \InvalidArgumentException(
                 "L\'agent $this n'est pas disponnible, il ne peut pas être affecté à une nouvelle mission."
             );
         }
-    
+
         if (!$this->missions->contains($mission)) {
-            if ($mission->isCurrent()){
+            if ($mission->isCurrent()) {
                 $this->setStatus(AgentStatusEnum::ON_MISSION);
             }
             $this->missions->add($mission);
